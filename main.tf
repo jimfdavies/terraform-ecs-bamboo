@@ -69,10 +69,12 @@ data "template_file" "ecs_user_data" {
 }
 
 resource "aws_launch_configuration" "bamboo-ecs" {
-  name_prefix   = "bamboo-ecs-"
-  image_id      = "${data.aws_ami.amzn-ecs-optimized.id}"
-  instance_type = "${var.ecs-instance-type}"
-  user_data     = "${data.template_file.ecs_user_data.rendered}"
+  name_prefix                 = "bamboo-ecs-"
+  image_id                    = "${data.aws_ami.amzn-ecs-optimized.id}"
+  instance_type               = "${var.ecs-instance-type}"
+  iam_instance_profile        = "${aws_iam_instance_profile.ecs_instance.name}"
+  user_data                   = "${data.template_file.ecs_user_data.rendered}"
+  associate_public_ip_address = true
 
   lifecycle {
     create_before_destroy = true
@@ -85,11 +87,64 @@ data "aws_subnet_ids" "main" {
 
 resource "aws_autoscaling_group" "bamboo-ecs" {
   name_prefix           = "bamboo-ecs-"
-  max_size              = 0
-  min_size              = 10
+  min_size              = 0
+  max_size              = 10
   launch_configuration  = "${aws_launch_configuration.bamboo-ecs.name}"
   health_check_type     = "EC2"
   vpc_zone_identifier   = [ "${data.aws_subnet_ids.main.ids}" ]
+}
+
+resource "aws_iam_instance_profile" "ecs_instance" {
+  name  = "ecs-instance-profile"
+  role  = "${aws_iam_role.ecs_instance.name}"
+}
+
+resource "aws_iam_role" "ecs_instance" {
+  name = "ecs-instance-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "ecs_instance" {
+  name    = "ecs_instance_policy"
+  role    = "${aws_iam_role.ecs_instance.name}"
+
+  policy  = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecs:DeregisterContainerInstance",
+                "ecs:DiscoverPollEndpoint",
+                "ecs:Poll",
+                "ecs:RegisterContainerInstance",
+                "ecs:StartTelemetrySession",
+                "ecs:UpdateContainerInstancesState",
+                "ecs:Submit*",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+EOF
 }
 
 ### ECS
