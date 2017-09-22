@@ -7,3 +7,8 @@ variable "az_count" {
   description = "Number of AZs to cover in a given AWS region"
   default     = "3"
 }
+
+variable "ecs-instance-type" {
+  description = "Instance type for the ECS launch configuration"
+  default     = "m4.large"
+}
