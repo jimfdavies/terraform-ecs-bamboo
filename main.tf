@@ -49,9 +49,29 @@ resource "aws_route_table_association" "a" {
 }
 
 ### Security
+resource "aws_security_group" "ecs_instance" {
+  vpc_id      = "${aws_vpc.main.id}"
+  name        = "ecs-instance"
+
+  ingress {
+    protocol  = "tcp"
+    from_port = 80
+    to_port   = 80
+    cidr_blocks = [
+      "${var.admin_cidr_ingress}",
+    ]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
 ### Compute
-data "aws_ami" "amzn-ecs-optimized" {
+data "aws_ami" "amzn_ecs_optimized" {
   most_recent = true
 
   filter {
@@ -68,13 +88,14 @@ data "template_file" "ecs_user_data" {
   }
 }
 
-resource "aws_launch_configuration" "bamboo-ecs" {
+resource "aws_launch_configuration" "bamboo_ecs" {
   name_prefix                 = "bamboo-ecs-"
-  image_id                    = "${data.aws_ami.amzn-ecs-optimized.id}"
+  image_id                    = "${data.aws_ami.amzn_ecs_optimized.id}"
   instance_type               = "${var.ecs-instance-type}"
   iam_instance_profile        = "${aws_iam_instance_profile.ecs_instance.name}"
   user_data                   = "${data.template_file.ecs_user_data.rendered}"
   associate_public_ip_address = true
+  security_groups             = [ "${aws_security_group.ecs_instance.id}" ]
 
   lifecycle {
     create_before_destroy = true
@@ -85,11 +106,11 @@ data "aws_subnet_ids" "main" {
   vpc_id = "${aws_vpc.main.id}"
 }
 
-resource "aws_autoscaling_group" "bamboo-ecs" {
+resource "aws_autoscaling_group" "bamboo_ecs" {
   name_prefix           = "bamboo-ecs-"
   min_size              = 0
   max_size              = 10
-  launch_configuration  = "${aws_launch_configuration.bamboo-ecs.name}"
+  launch_configuration  = "${aws_launch_configuration.bamboo_ecs.name}"
   health_check_type     = "EC2"
   vpc_zone_identifier   = [ "${data.aws_subnet_ids.main.ids}" ]
 }

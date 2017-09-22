@@ -12,3 +12,7 @@ variable "ecs-instance-type" {
   description = "Instance type for the ECS launch configuration"
   default     = "m4.large"
 }
+
+variable "admin_cidr_ingress" {
+  description = "CIDR"
+}
