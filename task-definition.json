@@ -1,0 +1,27 @@
+[
+  {
+    "name": "bamboo-server",
+    "image": "jimfdavies/bamboo-server-alpine:latest",
+    "cpu": 10,
+    "memory": 4096,
+    "portMappings": [
+      {
+        "hostPort": 80,
+        "containerPort": 8085,
+        "protocol": "tcp"
+      },
+      {
+        "hostPort": 54663,
+        "containerPort": 54663,
+        "protocol": "tcp"
+      }
+    ],
+    "essential": true,
+    "mountPoints": [
+      {
+        "containerPath": "/home/bamboo",
+        "sourceVolume": "efs-bamboo-home"
+      }
+    ]
+  }
+]
