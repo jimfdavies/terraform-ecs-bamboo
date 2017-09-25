@@ -108,7 +108,7 @@ data "aws_subnet_ids" "main" {
 
 resource "aws_autoscaling_group" "bamboo_ecs" {
   name_prefix           = "bamboo-ecs-"
-  min_size              = 1
+  min_size              = "${var.az_count}"
   max_size              = 10
   launch_configuration  = "${aws_launch_configuration.bamboo_ecs.name}"
   health_check_type     = "EC2"
