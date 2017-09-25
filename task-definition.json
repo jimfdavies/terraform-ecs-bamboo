@@ -6,7 +6,7 @@
     "memory": 4096,
     "portMappings": [
       {
-        "hostPort": 80,
+        "hostPort": 8085,
         "containerPort": 8085,
         "protocol": "tcp"
       },

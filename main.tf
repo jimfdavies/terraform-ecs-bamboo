@@ -70,6 +70,27 @@ resource "aws_security_group" "ecs_instance" {
   }
 }
 
+resource "aws_security_group" "lb_sg" {
+  vpc_id = "${aws_vpc.main.id}"
+  name   = "bamboo-alb"
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 80
+    to_port     = 80
+    cidr_blocks = [
+      "${var.admin_cidr_ingress}",
+    ]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 ### Compute
 data "aws_ami" "amzn_ecs_optimized" {
   most_recent = true
@@ -104,7 +125,7 @@ resource "aws_launch_configuration" "bamboo_ecs" {
 
 data "aws_subnet_ids" "main" {
   vpc_id = "${aws_vpc.main.id}"
-  depends_on = ["aws_vpc.main"]
+  # depends_on = ["aws_vpc.main"]
 }
 
 resource "aws_autoscaling_group" "bamboo_ecs" {
@@ -115,6 +136,8 @@ resource "aws_autoscaling_group" "bamboo_ecs" {
   health_check_type     = "EC2"
   vpc_zone_identifier   = [ "${data.aws_subnet_ids.main.ids}" ]
 }
+
+# IAM
 
 resource "aws_iam_instance_profile" "ecs_instance" {
   name  = "ecs-instance-profile"
@@ -169,6 +192,77 @@ resource "aws_iam_role_policy" "ecs_instance" {
 EOF
 }
 
+resource "aws_iam_role" "ecs_service" {
+  name = "ecs-service-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2008-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "ecs_service" {
+  name = "ecs_service_policy"
+  role = "${aws_iam_role.ecs_service.name}"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*",
+        "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+        "elasticloadbalancing:DeregisterTargets",
+        "elasticloadbalancing:Describe*",
+        "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+        "elasticloadbalancing:RegisterTargets"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+## ALB
+
+resource "aws_alb_target_group" "bamboo_ecs" {
+  name     = "bamboo-ecs"
+  port     = "8085"
+  protocol = "HTTP"
+  vpc_id   = "${aws_vpc.main.id}"
+}
+
+resource "aws_alb" "bamboo_alb" {
+  name            = "bamboo-alb"
+  subnets         = ["${aws_subnet.main.*.id}"]
+  security_groups = ["${aws_security_group.lb_sg.id}"]
+}
+
+resource "aws_alb_listener" "bamboo_alb" {
+  load_balancer_arn = "${aws_alb.bamboo_alb.id}"
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = "${aws_alb_target_group.bamboo_ecs.id}"
+    type             = "forward"
+  }
+}
+
 ### ECS
 
 resource "aws_ecs_cluster" "bamboo" {
@@ -187,4 +281,28 @@ resource "aws_ecs_task_definition" "bamboo-server" {
     name      = "efs-bamboo-home"
     host_path = "/efs/bamboo/home/bamboo"
   }
+}
+
+resource "aws_ecs_service" "bamboo-server" {
+  name            = "bamboo-server"
+  cluster         = "${aws_ecs_cluster.bamboo.id}"
+  task_definition = "${aws_ecs_task_definition.bamboo-server.arn}"
+  desired_count   = 1
+
+  placement_strategy {
+    type  = "spread"
+    field = "host"
+  }
+  iam_role        = "${aws_iam_role.ecs_service.name}"
+
+  load_balancer {
+    target_group_arn = "${aws_alb_target_group.bamboo_ecs.id}"
+    container_name   = "bamboo-server"
+    container_port   = "8085"
+  }
+
+  depends_on = [
+    "aws_iam_role_policy.ecs_service",
+    "aws_alb_listener.bamboo_alb",
+  ]
 }

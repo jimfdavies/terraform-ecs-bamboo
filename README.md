@@ -4,14 +4,14 @@ terraform-ecs-bamboo
 ## Overview
 - Build a VPC over all AZs with public-facing subnets
 - Create and deploy ECS instances across those subnets
-
-TODO:
-- Deploy EFS filesystem and attach to all running instances
-- Deploy empty PostGresDB instance on RDS
 - Create ECS service and connect EFS
 - Deploy Docker image https://hub.docker.com/r/jimfdavies/bamboo-server-alpine/
+
+TODO:
+- Add ALB and service auto-enrollment
+- Deploy EFS filesystem and attach to all running instances
+- Deploy empty PostGresDB instance on RDS
 - Output service public IP and RDS endpoint
-- (Future: Add ALB and service auto-enrollment)
 
 Takes you as far as the license page when you connect. You will need to add your own license and run the Custom Installation connecting to the RDS instance.
 this config will be stored on the EFS volume at /home/bamboo.
