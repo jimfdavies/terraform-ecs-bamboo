@@ -14,5 +14,5 @@ variable "ecs-instance-type" {
 }
 
 variable "admin_cidr_ingress" {
-  description = "CIDR"
+  description = "Used to secure all ingress from public networks"
 }
