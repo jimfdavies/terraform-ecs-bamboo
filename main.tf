@@ -104,6 +104,7 @@ resource "aws_launch_configuration" "bamboo_ecs" {
 
 data "aws_subnet_ids" "main" {
   vpc_id = "${aws_vpc.main.id}"
+  depends_on = ["aws_vpc.main"]
 }
 
 resource "aws_autoscaling_group" "bamboo_ecs" {
@@ -174,27 +175,16 @@ resource "aws_ecs_cluster" "bamboo" {
   name = "bamboo"
 }
 
-# resource "aws_ecs_service" "bamboo-server" {
-#   name            = "bamboo"
-#   cluster         = "${aws_ecs_cluster.foo.id}"
-#   task_definition = "${aws_ecs_task_definition.mongo.arn}"
-#   desired_count   = 3
-#   iam_role        = "${aws_iam_role.foo.arn}"
-#   depends_on      = ["aws_iam_role_policy.foo"]
-#
-#   placement_strategy {
-#     type  = "binpack"
-#     field = "cpu"
-#   }
-#
-#   load_balancer {
-#     elb_name       = "${aws_elb.foo.name}"
-#     container_name = "mongo"
-#     container_port = 8080
-#   }
-#
-#   placement_constraints {
-#     type       = "memberOf"
-#     expression = "attribute:ecs.availability-zone in [us-west-2a, us-west-2b]"
-#   }
-# }
+data "template_file" "task_definition" {
+  template = "${file("${path.module}/task-definition.json")}"
+}
+
+resource "aws_ecs_task_definition" "bamboo-server" {
+  family                = "bamboo-server"
+  container_definitions = "${data.template_file.task_definition.rendered}"
+  network_mode          = "bridge"
+  volume {
+    name      = "efs-bamboo-home"
+    host_path = "/efs/bamboo/home/bamboo"
+  }
+}
