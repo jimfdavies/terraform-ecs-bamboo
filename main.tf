@@ -133,18 +133,13 @@ resource "aws_launch_configuration" "bamboo_ecs" {
   }
 }
 
-data "aws_subnet_ids" "main" {
-  vpc_id = "${aws_vpc.main.id}"
-  # depends_on = ["aws_vpc.main"]
-}
-
 resource "aws_autoscaling_group" "bamboo_ecs" {
   name_prefix           = "bamboo-ecs-"
   min_size              = "${var.az_count}"
   max_size              = 10
   launch_configuration  = "${aws_launch_configuration.bamboo_ecs.name}"
   health_check_type     = "EC2"
-  vpc_zone_identifier   = [ "${data.aws_subnet_ids.main.ids}" ]
+  vpc_zone_identifier   = ["${aws_subnet.main.*.id}"]
 }
 
 # IAM
@@ -254,6 +249,11 @@ resource "aws_alb_target_group" "bamboo_ecs" {
   port     = "8085"
   protocol = "HTTP"
   vpc_id   = "${aws_vpc.main.id}"
+  health_check {
+    path      = "/"
+    protocol  = "HTTP"
+    matcher   = "200,302" # Includes 302 as / appears to redirect
+  }
 }
 
 resource "aws_alb" "bamboo_alb" {
