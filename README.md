@@ -1,14 +1,18 @@
 terraform-ecs-bamboo
 ====================
 
-## Overview
+## Objective
+Deploy Atlassian Bamboo Server (standalone) to AWS EC2 Container Service and present License Setup via a IP-restricted Application Load Balancer.
+Due to the licensing restrictions on this commercial product, some manual steps are currently needed. Once initial setup is complete however, the objective is to be self-healing after host instance/AZ loss.
+
+## Features
 - Build a VPC over all AZs with public-facing subnets
 - Create and deploy ECS instances across those subnets
 - Create ECS service and connect EFS
 - Deploy Docker image https://hub.docker.com/r/jimfdavies/bamboo-server-alpine/
+- Create ALB and register ECS service to Target Group
 
 TODO:
-- Add ALB and service auto-enrollment
 - Deploy EFS filesystem and attach to all running instances
 - Deploy empty PostGresDB instance on RDS
 - Output service public IP and RDS endpoint
