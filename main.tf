@@ -101,6 +101,16 @@ resource "aws_security_group" "lb_sg" {
   }
 }
 
+# EFS
+
+resource "aws_efs_file_system" "bamboo_home" {}
+
+resource "aws_efs_mount_target" "bamboo_home" {
+  file_system_id  = "${aws_efs_file_system.bamboo_home.id}"
+  count           = "${var.az_count}"
+  subnet_id       = "${element("${aws_subnet.main.*.id}", count.index)}"
+}
+
 ### Compute
 data "aws_ami" "amzn_ecs_optimized" {
   most_recent = true
@@ -131,6 +141,9 @@ resource "aws_launch_configuration" "bamboo_ecs" {
   lifecycle {
     create_before_destroy = true
   }
+  depends_on = [
+    "aws_efs_mount_target.bamboo_home"
+  ]
 }
 
 resource "aws_autoscaling_group" "bamboo_ecs" {
