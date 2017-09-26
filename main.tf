@@ -53,12 +53,22 @@ resource "aws_security_group" "ecs_instance" {
   vpc_id      = "${aws_vpc.main.id}"
   name        = "ecs-instance"
 
+  # ingress {
+  #   protocol  = "tcp"
+  #   from_port = 8085
+  #   to_port   = 8085
+  #   cidr_blocks = [
+  #     "${var.admin_cidr_ingress}",
+  #   ]
+  # }
+
   ingress {
     protocol  = "tcp"
-    from_port = 80
-    to_port   = 80
-    cidr_blocks = [
-      "${var.admin_cidr_ingress}",
+    from_port = 8085
+    to_port   = 8085
+
+    security_groups = [
+      "${aws_security_group.lb_sg.id}",
     ]
   }
 
