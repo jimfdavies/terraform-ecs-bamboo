@@ -53,15 +53,6 @@ resource "aws_security_group" "ecs_instance" {
   vpc_id      = "${aws_vpc.main.id}"
   name        = "ecs-instance"
 
-  # ingress {
-  #   protocol  = "tcp"
-  #   from_port = 8085
-  #   to_port   = 8085
-  #   cidr_blocks = [
-  #     "${var.admin_cidr_ingress}",
-  #   ]
-  # }
-
   ingress {
     protocol  = "tcp"
     from_port = 8085
@@ -101,6 +92,29 @@ resource "aws_security_group" "lb_sg" {
   }
 }
 
+resource "aws_security_group" "efs_sg" {
+  vpc_id = "${aws_vpc.main.id}"
+  name   = "efs"
+
+  ingress {
+    protocol  = "tcp"
+    from_port = 2049
+    to_port   = 2049
+    security_groups = [
+      "${aws_security_group.ecs_instance.id}"
+    ]
+  }
+
+  egress {
+    protocol  = "tcp"
+    from_port = 2049
+    to_port   = 2049
+    security_groups = [
+      "${aws_security_group.ecs_instance.id}"
+    ]
+  }
+}
+
 # EFS
 
 resource "aws_efs_file_system" "bamboo_home" {}
@@ -109,6 +123,9 @@ resource "aws_efs_mount_target" "bamboo_home" {
   file_system_id  = "${aws_efs_file_system.bamboo_home.id}"
   count           = "${var.az_count}"
   subnet_id       = "${element("${aws_subnet.main.*.id}", count.index)}"
+  security_groups = [
+    "${aws_security_group.efs_sg.id}"
+  ]
 }
 
 ### Compute
@@ -125,7 +142,9 @@ data "template_file" "ecs_user_data" {
   template = "${file("${path.module}/ecs_user_data.txt")}"
 
   vars {
-    ecs_cluster_name = "${aws_ecs_cluster.bamboo.name}"
+    ecs_cluster_name  = "${aws_ecs_cluster.bamboo.name}"
+    efs_id            = "${aws_efs_file_system.bamboo_home.id}"
+    efs_region        = "${var.aws_region}"
   }
 }
 
