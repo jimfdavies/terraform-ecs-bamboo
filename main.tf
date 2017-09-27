@@ -329,3 +329,5 @@ resource "aws_ecs_service" "bamboo-server" {
     "aws_alb_listener.bamboo_alb",
   ]
 }
+
+# EOF
