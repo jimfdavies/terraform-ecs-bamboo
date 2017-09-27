@@ -12,10 +12,9 @@ Due to the licensing restrictions on this commercial product, some manual steps 
 - Deploy Docker image https://hub.docker.com/r/jimfdavies/bamboo-server-alpine/
 - Create ALB and register ECS service to Target Group
 
-TODO:
-- Deploy EFS filesystem and attach to all running instances
-- Deploy empty PostGresDB instance on RDS
-- Output service public IP and RDS endpoint
+- TODO: Deploy EFS filesystem and attach to all running instances
+- TODO: Deploy empty PostgresDB instance on RDS
+- TODO: Output service public IP and RDS endpoint
 
 Takes you as far as the license page when you connect. You will need to add your own license and run the Custom Installation connecting to the RDS instance.
 this config will be stored on the EFS volume at /home/bamboo.
