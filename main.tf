@@ -5,7 +5,6 @@ provider "aws" {
 
 ## EC2
 ### Network
-
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "main" {
@@ -116,8 +115,29 @@ resource "aws_security_group" "efs_sg" {
   }
 }
 
-# EFS
+resource "aws_security_group" "bamboo_db_sg" {
+  vpc_id = "${aws_vpc.main.id}"
 
+  ingress {
+    protocol  = "tcp"
+    from_port = 5432
+    to_port   = 5432
+    security_groups = [
+      "${aws_security_group.ecs_instance.id}"
+    ]
+  }
+
+  egress {
+    protocol  = "-1"
+    from_port = 0
+    to_port   = 0
+    security_groups = [
+      "${aws_security_group.ecs_instance.id}"
+    ]
+  }
+}
+
+# EFS
 resource "aws_efs_file_system" "bamboo_home" {}
 
 resource "aws_efs_mount_target" "bamboo_home" {
@@ -126,6 +146,28 @@ resource "aws_efs_mount_target" "bamboo_home" {
   subnet_id       = "${element("${aws_subnet.main.*.id}", count.index)}"
   security_groups = [
     "${aws_security_group.efs_sg.id}"
+  ]
+}
+
+### RDS (Postgres)
+resource "aws_db_subnet_group" "bamboo_db_subnet_group" {
+  name       = "bamboo_db_subnet_group"
+  subnet_ids = ["${aws_subnet.main.*.id}"]
+}
+
+resource "aws_db_instance" "bamboo_db" {
+  identifier_prefix       = "bamboo-db-"
+  engine                  = "postgres"
+  instance_class          = "${var.db_instance_class}"
+  engine_version          = "${var.engine_version}"
+  allocated_storage       = "${var.allocated_storage}"
+  storage_type            = "gp2"
+  multi_az                = "${var.multi_az}"
+  username                = "${var.db_username}"
+  password                = "${var.db_password}"
+  db_subnet_group_name    = "${aws_db_subnet_group.bamboo_db_subnet_group.name}"
+  vpc_security_group_ids  = [
+    "${aws_security_group.bamboo_db_sg.id}"
   ]
 }
 
@@ -162,7 +204,8 @@ resource "aws_launch_configuration" "bamboo_ecs" {
     create_before_destroy = true
   }
   depends_on = [
-    "aws_efs_mount_target.bamboo_home"
+    "aws_efs_mount_target.bamboo_home",
+    "aws_db_instance.bamboo_db"
   ]
 }
 
