@@ -2,10 +2,10 @@ output "alb_endpoint" {
   value = "http://${aws_alb.bamboo_alb.dns_name}/"
 }
 
-output "db_endpoint" {
-  value = "${aws_db_instance.bamboo_db.endpoint}"
+output "database_url" {
+  value = "jdbc:postgresql://${aws_db_instance.bamboo_db.endpoint}/${aws_db_instance.bamboo_db.name}"
 }
 
-output "db_port" {
-  value = "${aws_db_instance.bamboo_db.port}"
+output "db_username" {
+  value = "${aws_db_instance.bamboo_db.username}"
 }
