@@ -9,7 +9,8 @@ provider "aws" {
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "main" {
-  cidr_block = "10.75.0.0/24"
+  cidr_block            = "10.75.0.0/24"
+  enable_dns_hostnames  = "true"
   tags {
     Name = "workspace1"
   }
