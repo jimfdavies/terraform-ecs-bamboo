@@ -48,3 +48,7 @@ terraform destroy \
   -var 'db_username=master' \
   -var 'db_password=changemerightmeow'
 ```
+
+## Bamboo setup
+
+When Apply has finished, follow official [Bamboo Setup Wizard](https://confluence.atlassian.com/bamboo/running-the-setup-wizard-289276851.html) using the Outputs from the Terraform run.
