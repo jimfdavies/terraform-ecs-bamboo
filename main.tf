@@ -162,10 +162,12 @@ resource "aws_db_instance" "bamboo_db" {
   engine_version          = "${var.engine_version}"
   allocated_storage       = "${var.allocated_storage}"
   storage_type            = "gp2"
+  name                    = "bamboo"
   multi_az                = "${var.multi_az}"
   username                = "${var.db_username}"
   password                = "${var.db_password}"
   db_subnet_group_name    = "${aws_db_subnet_group.bamboo_db_subnet_group.name}"
+  skip_final_snapshot     = "true" # WARNING
   vpc_security_group_ids  = [
     "${aws_security_group.bamboo_db_sg.id}"
   ]
