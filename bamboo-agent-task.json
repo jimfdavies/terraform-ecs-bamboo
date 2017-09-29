@@ -1,0 +1,31 @@
+[
+  {
+    "name": "bamboo-java-agent",
+    "image": "atlassian/bamboo-java-agent:latest",
+    "cpu": 10,
+    "memory": 512,
+    "portMappings": [
+      {
+        "hostPort": 8085,
+        "containerPort": 8085,
+        "protocol": "tcp"
+      },
+      {
+        "hostPort": 54663,
+        "containerPort": 54663,
+        "protocol": "tcp"
+      }
+    ],
+    "environment": [
+        {
+          "name": "BAMBOO_SERVER",
+          "value": "http://${bamboo_server_url}/bamboo"
+        },
+        {
+          "name": "HOME",
+          "value": "/root/"
+        }
+    ],
+    "essential": true
+  }
+]

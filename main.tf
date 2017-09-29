@@ -57,10 +57,18 @@ resource "aws_security_group" "ecs_instance" {
     protocol  = "tcp"
     from_port = 8085
     to_port   = 8085
+    self      = "true"
 
     security_groups = [
       "${aws_security_group.lb_sg.id}",
     ]
+  }
+
+  ingress {
+    protocol  = "tcp"
+    from_port = 54663
+    to_port   = 54663
+    self      = "true"
   }
 
   egress {
@@ -81,7 +89,7 @@ resource "aws_security_group" "lb_sg" {
     to_port     = 80
     cidr_blocks = [
       "${var.admin_cidr_ingress}",
-    ]
+    ],
   }
 
   egress {
@@ -357,13 +365,13 @@ resource "aws_ecs_cluster" "bamboo" {
   name = "bamboo"
 }
 
-data "template_file" "task_definition" {
-  template = "${file("${path.module}/task-definition.json")}"
+data "template_file" "bamboo-server-task" {
+  template = "${file("${path.module}/bamboo-server-task.json")}"
 }
 
 resource "aws_ecs_task_definition" "bamboo-server" {
   family                = "bamboo-server"
-  container_definitions = "${data.template_file.task_definition.rendered}"
+  container_definitions = "${data.template_file.bamboo-server-task.rendered}"
   network_mode          = "bridge"
   volume {
     name      = "efs-bamboo-home"
@@ -392,5 +400,36 @@ resource "aws_ecs_service" "bamboo-server" {
   depends_on = [
     "aws_iam_role_policy.ecs_service",
     "aws_alb_listener.bamboo_alb",
+  ]
+}
+
+data "template_file" "bamboo-agent-task" {
+  template = "${file("${path.module}/bamboo-agent-task.json")}"
+
+  vars {
+    bamboo_server_url  = "${aws_alb.bamboo_alb.dns_name}"
+  }
+}
+
+resource "aws_ecs_task_definition" "bamboo-agent" {
+  family                = "bamboo-agent"
+  container_definitions = "${data.template_file.bamboo-agent-task.rendered}"
+  network_mode          = "bridge"
+}
+
+resource "aws_ecs_service" "bamboo-agent" {
+  name            = "bamboo-agent"
+  cluster         = "${aws_ecs_cluster.bamboo.id}"
+  task_definition = "${aws_ecs_task_definition.bamboo-agent.arn}"
+  desired_count   = 1
+
+  placement_strategy {
+    type  = "spread"
+    field = "host"
+  }
+  # iam_role        = "${aws_iam_role.ecs_service.name}"
+
+  depends_on = [
+    "aws_ecs_service.bamboo-server",
   ]
 }

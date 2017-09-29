@@ -16,7 +16,7 @@ However, once initial setup is complete and the Bamboo config and database is pe
 - Deploy empty PostgresDB instance on RDS
 - Output service public IP and RDS endpoint
 
-- TODO: Deploy an autoscaling group of Bamboo Agents (registering would be manual post-setup)
+- TODO: Deploy an ECS Service of Bamboo Agents (registering would be manual post-setup)
 - TODO: Deploy automated backup service for config/data
 - TODO: Deploy optional 'Bamboo restorer' service that re-hydrates config/data
 
