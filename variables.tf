@@ -1,6 +1,16 @@
 variable "aws_region" {
-  description = "The AWS region to create things in."
+  description = "The AWS region"
   default     = "eu-west-1"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for your VPC. IMPORTANT: so subnet automation works use /24."
+  default     = "10.75.0.0/24"
+}
+
+variable "vpc_name" {
+  description = "Name for your VPC"
+  default     = "workspace1"
 }
 
 variable "az_count" {
