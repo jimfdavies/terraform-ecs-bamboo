@@ -30,6 +30,7 @@ Plan
 terraform plan \
   -var 'shared_credentials_file=~/.aws/credentials.personal' \
   -var 'admin_cidr_ingress=1.2.3.4/32' \
+  -var 'key_name=bamboo-ecs' \
   -var 'db_username=master' \
   -var 'db_password=changemerightmeow'
 ```
@@ -38,6 +39,7 @@ Apply
 terraform apply \
   -var 'shared_credentials_file=~/.aws/credentials.personal' \
   -var 'admin_cidr_ingress=1.2.3.4/32' \
+  -var 'key_name=bamboo-ecs' \
   -var 'db_username=master' \
   -var 'db_password=changemerightmeow'
 ```
@@ -46,6 +48,7 @@ Destroy
 terraform destroy \
   -var 'shared_credentials_file=~/.aws/credentials.personal' \
   -var 'admin_cidr_ingress=1.2.3.4/32' \
+  -var 'key_name=bamboo-ecs' \
   -var 'db_username=master' \
   -var 'db_password=changemerightmeow'
 ```

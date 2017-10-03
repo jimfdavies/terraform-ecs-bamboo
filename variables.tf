@@ -3,6 +3,14 @@ variable "aws_region" {
   default     = "eu-west-1"
 }
 
+variable "admin_cidr_ingress" {
+  description = "Used to secure all ingress from public networks"
+}
+
+variable "key_name" {
+  description = "Name of AWS key pair"
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for your VPC. IMPORTANT: so subnet automation works use /24."
   default     = "10.75.0.0/24"
@@ -21,10 +29,6 @@ variable "az_count" {
 variable "ecs-instance-type" {
   description = "Instance type for the ECS launch configuration"
   default     = "m4.large"
-}
-
-variable "admin_cidr_ingress" {
-  description = "Used to secure all ingress from public networks"
 }
 
 # RDS (Postgres) settings

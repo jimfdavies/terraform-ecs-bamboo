@@ -19,13 +19,20 @@
     "environment": [
         {
           "name": "BAMBOO_SERVER",
-          "value": "http://${bamboo_server_url}/bamboo"
+          "value": "http://10.75.0.52:8052/bamboo"
         },
         {
           "name": "HOME",
           "value": "/root/"
         }
     ],
+    "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+            "awslogs-group": "${log_group_name}",
+            "awslogs-region": "${log_group_region}"
+        }
+    },
     "essential": true
   }
 ]

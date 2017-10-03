@@ -60,7 +60,7 @@ resource "aws_security_group" "ecs_instance" {
     self      = "true"
 
     security_groups = [
-      "${aws_security_group.alb_sg.id}",
+      "${aws_security_group.alb_sg.id}"
     ]
   }
 
@@ -69,6 +69,15 @@ resource "aws_security_group" "ecs_instance" {
     from_port = 54663
     to_port   = 54663
     self      = "true"
+  }
+
+  ingress {
+    protocol  = "tcp"
+    from_port = 22
+    to_port   = 22
+    cidr_blocks = [
+      "${var.admin_cidr_ingress}"
+    ]
   }
 
   egress {
@@ -88,7 +97,7 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 80
     to_port     = 80
     cidr_blocks = [
-      "${var.admin_cidr_ingress}",
+      "${var.admin_cidr_ingress}"
     ],
   }
 
@@ -203,6 +212,7 @@ data "template_file" "ecs_user_data" {
 
 resource "aws_launch_configuration" "bamboo_ecs" {
   name_prefix                 = "bamboo-ecs-"
+  key_name                    = "${var.key_name}"
   image_id                    = "${data.aws_ami.amzn_ecs_optimized.id}"
   instance_type               = "${var.ecs-instance-type}"
   iam_instance_profile        = "${aws_iam_instance_profile.ecs_instance.name}"
@@ -273,8 +283,10 @@ resource "aws_iam_role_policy" "ecs_instance" {
                 "ecs:StartTelemetrySession",
                 "ecs:UpdateContainerInstancesState",
                 "ecs:Submit*",
+                "logs:CreateLogGroup",
                 "logs:CreateLogStream",
-                "logs:PutLogEvents"
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
             ],
             "Resource": "*"
         }
@@ -359,6 +371,12 @@ resource "aws_alb_listener" "bamboo_alb" {
   }
 }
 
+### Cloudwatch Logs
+resource "aws_cloudwatch_log_group" "ecs" {
+  name              = "bamboo-ecs-group/ecs"
+  retention_in_days = 1
+}
+
 ### ECS
 
 resource "aws_ecs_cluster" "bamboo" {
@@ -407,7 +425,9 @@ data "template_file" "bamboo_agent_task" {
   template = "${file("${path.module}/bamboo-agent-task.json")}"
 
   vars {
-    bamboo_server_url  = "${aws_alb.bamboo_alb.dns_name}"
+    bamboo_server_url   = "${aws_alb.bamboo_alb.dns_name}"
+    log_group_region    = "${var.aws_region}"
+    log_group_name      = "${aws_cloudwatch_log_group.ecs.name}"
   }
 }
 
