@@ -63,3 +63,4 @@ If you are concerned with security, you may want to consider extending this conf
 - Add HTTPS (with a genuine DNS domain) to the ALB (use Route 53)
 - Add SSL to the Agent communications
 - Create a new ECS cluster for the Agents so the instance hosts don't have the EFS share mounted
+- Create 'private' subnets and deploy ECS instances to that
