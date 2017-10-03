@@ -9,7 +9,3 @@ output "database_url" {
 output "db_username" {
   value = "${aws_db_instance.bamboo_db.username}"
 }
-
-output "notes" {
-  value = "Service can take up to three minutes to start and register."
-}

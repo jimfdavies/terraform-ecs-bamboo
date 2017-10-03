@@ -52,4 +52,6 @@ terraform destroy \
 
 ## Bamboo setup
 
+Note: The Server service can take up to three minutes to start up and register with the ALB.
+
 When Apply has finished, follow official [Bamboo Setup Wizard](https://confluence.atlassian.com/bamboo/running-the-setup-wizard-289276851.html) using the Outputs from the Terraform run.
