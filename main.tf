@@ -60,7 +60,7 @@ resource "aws_security_group" "ecs_instance" {
     self      = "true"
 
     security_groups = [
-      "${aws_security_group.lb_sg.id}",
+      "${aws_security_group.alb_sg.id}",
     ]
   }
 
@@ -79,7 +79,7 @@ resource "aws_security_group" "ecs_instance" {
   }
 }
 
-resource "aws_security_group" "lb_sg" {
+resource "aws_security_group" "alb_sg" {
   vpc_id = "${aws_vpc.main.id}"
   name   = "bamboo-alb"
 
@@ -345,7 +345,7 @@ resource "aws_alb_target_group" "bamboo_ecs" {
 resource "aws_alb" "bamboo_alb" {
   name            = "bamboo-alb"
   subnets         = ["${aws_subnet.main.*.id}"]
-  security_groups = ["${aws_security_group.lb_sg.id}"]
+  security_groups = ["${aws_security_group.alb_sg.id}"]
 }
 
 resource "aws_alb_listener" "bamboo_alb" {
@@ -365,13 +365,13 @@ resource "aws_ecs_cluster" "bamboo" {
   name = "bamboo"
 }
 
-data "template_file" "bamboo-server-task" {
+data "template_file" "bamboo_server_task" {
   template = "${file("${path.module}/bamboo-server-task.json")}"
 }
 
-resource "aws_ecs_task_definition" "bamboo-server" {
+resource "aws_ecs_task_definition" "bamboo_server" {
   family                = "bamboo-server"
-  container_definitions = "${data.template_file.bamboo-server-task.rendered}"
+  container_definitions = "${data.template_file.bamboo_server_task.rendered}"
   network_mode          = "bridge"
   volume {
     name      = "efs-bamboo-home"
@@ -379,10 +379,10 @@ resource "aws_ecs_task_definition" "bamboo-server" {
   }
 }
 
-resource "aws_ecs_service" "bamboo-server" {
+resource "aws_ecs_service" "bamboo_server" {
   name            = "bamboo-server"
   cluster         = "${aws_ecs_cluster.bamboo.id}"
-  task_definition = "${aws_ecs_task_definition.bamboo-server.arn}"
+  task_definition = "${aws_ecs_task_definition.bamboo_server.arn}"
   desired_count   = 1
 
   placement_strategy {
@@ -403,7 +403,7 @@ resource "aws_ecs_service" "bamboo-server" {
   ]
 }
 
-data "template_file" "bamboo-agent-task" {
+data "template_file" "bamboo_agent_task" {
   template = "${file("${path.module}/bamboo-agent-task.json")}"
 
   vars {
@@ -411,16 +411,16 @@ data "template_file" "bamboo-agent-task" {
   }
 }
 
-resource "aws_ecs_task_definition" "bamboo-agent" {
+resource "aws_ecs_task_definition" "bamboo_agent" {
   family                = "bamboo-agent"
-  container_definitions = "${data.template_file.bamboo-agent-task.rendered}"
+  container_definitions = "${data.template_file.bamboo_agent_task.rendered}"
   network_mode          = "bridge"
 }
 
-resource "aws_ecs_service" "bamboo-agent" {
+resource "aws_ecs_service" "bamboo_agent" {
   name            = "bamboo-agent"
   cluster         = "${aws_ecs_cluster.bamboo.id}"
-  task_definition = "${aws_ecs_task_definition.bamboo-agent.arn}"
+  task_definition = "${aws_ecs_task_definition.bamboo_agent.arn}"
   desired_count   = 1
 
   placement_strategy {
@@ -430,6 +430,6 @@ resource "aws_ecs_service" "bamboo-agent" {
   # iam_role        = "${aws_iam_role.ecs_service.name}"
 
   depends_on = [
-    "aws_ecs_service.bamboo-server",
+    "aws_ecs_service.bamboo_server",
   ]
 }
