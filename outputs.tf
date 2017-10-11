@@ -9,3 +9,7 @@ output "database_url" {
 output "db_username" {
   value = "${aws_db_instance.bamboo_db.username}"
 }
+
+output "db_password" {
+  value = "Take from variables.tf or your command line."
+}
