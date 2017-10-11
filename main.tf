@@ -97,8 +97,9 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 80
     to_port     = 80
     cidr_blocks = [
-      "${var.admin_cidr_ingress}"
-    ],
+      "${var.admin_cidr_ingress}",
+      "${var.vpc_cidr}"
+    ]
   }
 
   egress {
