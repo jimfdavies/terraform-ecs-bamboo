@@ -19,6 +19,7 @@ However, once initial setup is complete and the Bamboo config and database is pe
 - TODO: Deploy an ECS Service of Bamboo Agents (registering would be manual post-setup)
 - TODO: Deploy automated backup service for config/data
 - TODO: Deploy optional 'Bamboo restorer' service that re-hydrates config/data
+- TODO: Optionally, use Terraform File provisioner to populate initial config
 
 Takes you as far as the license page when you connect. You will need to add your own license and run the Custom Installation connecting to the RDS instance.
 this config will be stored on the EFS volume at /home/bamboo.
