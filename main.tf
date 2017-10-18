@@ -363,7 +363,7 @@ resource "aws_alb" "bamboo_alb" {
 
 resource "aws_alb_listener" "bamboo_alb" {
   load_balancer_arn = "${aws_alb.bamboo_alb.id}"
-  port              = "80"
+  port              = "${var.bamboo_server_external_port}"
   protocol          = "HTTP"
 
   default_action {
@@ -374,10 +374,9 @@ resource "aws_alb_listener" "bamboo_alb" {
 
 ## ELB for Bamboo Server Broker message queue
 
-resource "aws_elb" "bamboo_mq" {
-  name                = "bamboo-mq"
-  count               = "${var.az_count}"
-  availability_zones  = "${data.aws_availability_zones.available.names[count.index]}"
+resource "aws_elb" "bamboo_broker_elb" {
+  name                = "bamboo-broker-elb"
+  availability_zones  = ["${data.aws_availability_zones.available.names}"]
 
   listener {
     instance_port     = 54663
@@ -409,6 +408,9 @@ resource "aws_ecs_cluster" "bamboo" {
 
 data "template_file" "bamboo_server_task" {
   template = "${file("${path.module}/bamboo-server-task.json")}"
+  vars {
+    bamboo_version = "${var.bamboo_version}"
+  }
 }
 
 resource "aws_ecs_task_definition" "bamboo_server" {
@@ -449,7 +451,9 @@ data "template_file" "bamboo_agent_task" {
   template = "${file("${path.module}/bamboo-agent-task.json")}"
 
   vars {
-    bamboo_server_url   = "${aws_alb.bamboo_alb.dns_name}"
+    bamboo_server_host  = "${aws_alb.bamboo_alb.dns_name}"
+    bamboo_server_port  = "${var.bamboo_server_external_port}"
+    bamboo_version      = "${var.bamboo_version}"
     log_group_region    = "${var.aws_region}"
     log_group_name      = "${aws_cloudwatch_log_group.ecs.name}"
   }

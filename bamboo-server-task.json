@@ -19,7 +19,7 @@
     "environment": [
         {
           "name": "BAMBOO_VERSION",
-          "value": "6.1.1"
+          "value": "${bamboo_version}"
         }
     ],
     "essential": true,

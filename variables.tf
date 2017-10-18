@@ -31,6 +31,17 @@ variable "ecs-instance-type" {
   default     = "m4.large"
 }
 
+# Bamboo settings
+variable "bamboo_version" {
+  description = "Bamboo Server version (also used by the Agent container)"
+  default     = "6.1.1"
+}
+
+variable "bamboo_server_external_port" {
+  description = "TCP port that the Bamboo LB should listen on (not the container port)"
+  default     = "80"
+}
+
 # RDS (Postgres) settings
 variable "allocated_storage" {
   description = "PostgresDB allocated storage"
