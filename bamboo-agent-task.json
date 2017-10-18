@@ -1,25 +1,13 @@
 [
   {
     "name": "bamboo-java-agent",
-    "image": "atlassian/bamboo-java-agent:latest",
+    "image": "jimfdavies/bamboo-agent-alpine:latest",
     "cpu": 10,
-    "memory": 512,
-    "portMappings": [
-      {
-        "hostPort": 8085,
-        "containerPort": 8085,
-        "protocol": "tcp"
-      },
-      {
-        "hostPort": 54663,
-        "containerPort": 54663,
-        "protocol": "tcp"
-      }
-    ],
+    "memory": 1024,
     "environment": [
         {
           "name": "BAMBOO_SERVER",
-          "value": "http://10.75.0.52:8052/bamboo"
+          "value": "http://10.75.0.52:8085/bamboo"
         },
         {
           "name": "HOME",
@@ -32,7 +20,6 @@
             "awslogs-group": "${log_group_name}",
             "awslogs-region": "${log_group_region}"
         }
-    },
-    "essential": true
+    }
   }
 ]

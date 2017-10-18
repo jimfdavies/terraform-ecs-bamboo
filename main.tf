@@ -341,7 +341,7 @@ resource "aws_iam_role_policy" "ecs_service" {
 EOF
 }
 
-## ALB
+## ALB for Bamboo Server Base URL
 
 resource "aws_alb_target_group" "bamboo_ecs" {
   name     = "bamboo-ecs"
@@ -369,6 +369,29 @@ resource "aws_alb_listener" "bamboo_alb" {
   default_action {
     target_group_arn = "${aws_alb_target_group.bamboo_ecs.id}"
     type             = "forward"
+  }
+}
+
+## ELB for Bamboo Server Broker message queue
+
+resource "aws_elb" "bamboo_mq" {
+  name                = "bamboo-mq"
+  count               = "${var.az_count}"
+  availability_zones  = "${data.aws_availability_zones.available.names[count.index]}"
+
+  listener {
+    instance_port     = 54663
+    instance_protocol = "tcp"
+    lb_port           = 54663
+    lb_protocol       = "tcp"
+  }
+
+  health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 3
+    target              = "TCP:54663"
+    interval            = 30
   }
 }
 
