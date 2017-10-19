@@ -8,8 +8,9 @@ provider "aws" {
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "main" {
-  cidr_block            = "${var.vpc_cidr}"
-  enable_dns_hostnames  = "true"
+  cidr_block           = "${var.vpc_cidr}"
+  enable_dns_hostnames = "true"
+
   tags {
     Name = "${var.vpc_name}"
   }
@@ -20,6 +21,7 @@ resource "aws_subnet" "main" {
   cidr_block        = "${cidrsubnet(aws_vpc.main.cidr_block, 2, count.index)}"
   availability_zone = "${data.aws_availability_zones.available.names[count.index]}"
   vpc_id            = "${aws_vpc.main.id}"
+
   tags {
     Name = "${aws_vpc.main.tags.Name}-${count.index}"
   }
@@ -27,6 +29,7 @@ resource "aws_subnet" "main" {
 
 resource "aws_internet_gateway" "gw" {
   vpc_id = "${aws_vpc.main.id}"
+
   tags {
     Name = "${aws_vpc.main.tags.Name}"
   }
@@ -50,8 +53,8 @@ resource "aws_route_table_association" "a" {
 
 ### Security
 resource "aws_security_group" "ecs_instance" {
-  vpc_id      = "${aws_vpc.main.id}"
-  name        = "ecs-instance"
+  vpc_id = "${aws_vpc.main.id}"
+  name   = "ecs-instance"
 
   ingress {
     protocol  = "tcp"
@@ -60,7 +63,7 @@ resource "aws_security_group" "ecs_instance" {
     self      = "true"
 
     security_groups = [
-      "${aws_security_group.alb_sg.id}"
+      "${aws_security_group.alb_sg.id}",
     ]
   }
 
@@ -75,8 +78,9 @@ resource "aws_security_group" "ecs_instance" {
     protocol  = "tcp"
     from_port = 22
     to_port   = 22
+
     cidr_blocks = [
-      "${var.admin_cidr_ingress}"
+      "${var.admin_cidr_ingress}",
     ]
   }
 
@@ -93,19 +97,20 @@ resource "aws_security_group" "alb_sg" {
   name   = "bamboo-alb"
 
   ingress {
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
+    protocol  = "tcp"
+    from_port = 80
+    to_port   = 80
+
     cidr_blocks = [
       "${var.admin_cidr_ingress}",
-      "${var.vpc_cidr}"
+      "${var.vpc_cidr}",
     ]
   }
 
   egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -118,8 +123,9 @@ resource "aws_security_group" "efs_sg" {
     protocol  = "tcp"
     from_port = 2049
     to_port   = 2049
+
     security_groups = [
-      "${aws_security_group.ecs_instance.id}"
+      "${aws_security_group.ecs_instance.id}",
     ]
   }
 
@@ -127,8 +133,9 @@ resource "aws_security_group" "efs_sg" {
     protocol  = "tcp"
     from_port = 2049
     to_port   = 2049
+
     security_groups = [
-      "${aws_security_group.ecs_instance.id}"
+      "${aws_security_group.ecs_instance.id}",
     ]
   }
 }
@@ -140,8 +147,9 @@ resource "aws_security_group" "bamboo_db_sg" {
     protocol  = "tcp"
     from_port = 5432
     to_port   = 5432
+
     security_groups = [
-      "${aws_security_group.ecs_instance.id}"
+      "${aws_security_group.ecs_instance.id}",
     ]
   }
 
@@ -149,8 +157,9 @@ resource "aws_security_group" "bamboo_db_sg" {
     protocol  = "-1"
     from_port = 0
     to_port   = 0
+
     security_groups = [
-      "${aws_security_group.ecs_instance.id}"
+      "${aws_security_group.ecs_instance.id}",
     ]
   }
 }
@@ -159,11 +168,12 @@ resource "aws_security_group" "bamboo_db_sg" {
 resource "aws_efs_file_system" "bamboo_home" {}
 
 resource "aws_efs_mount_target" "bamboo_home" {
-  file_system_id  = "${aws_efs_file_system.bamboo_home.id}"
-  count           = "${var.az_count}"
-  subnet_id       = "${element("${aws_subnet.main.*.id}", count.index)}"
+  file_system_id = "${aws_efs_file_system.bamboo_home.id}"
+  count          = "${var.az_count}"
+  subnet_id      = "${element("${aws_subnet.main.*.id}", count.index)}"
+
   security_groups = [
-    "${aws_security_group.efs_sg.id}"
+    "${aws_security_group.efs_sg.id}",
   ]
 }
 
@@ -174,20 +184,21 @@ resource "aws_db_subnet_group" "bamboo_db_subnet_group" {
 }
 
 resource "aws_db_instance" "bamboo_db" {
-  identifier_prefix       = "bamboo-db-"
-  engine                  = "postgres"
-  instance_class          = "${var.db_instance_class}"
-  engine_version          = "${var.engine_version}"
-  allocated_storage       = "${var.allocated_storage}"
-  storage_type            = "gp2"
-  name                    = "bamboo"
-  multi_az                = "${var.multi_az}"
-  username                = "${var.db_username}"
-  password                = "${var.db_password}"
-  db_subnet_group_name    = "${aws_db_subnet_group.bamboo_db_subnet_group.name}"
-  skip_final_snapshot     = "true" # WARNING
-  vpc_security_group_ids  = [
-    "${aws_security_group.bamboo_db_sg.id}"
+  identifier_prefix    = "bamboo-db-"
+  engine               = "postgres"
+  instance_class       = "${var.db_instance_class}"
+  engine_version       = "${var.engine_version}"
+  allocated_storage    = "${var.allocated_storage}"
+  storage_type         = "gp2"
+  name                 = "bamboo"
+  multi_az             = "${var.multi_az}"
+  username             = "${var.db_username}"
+  password             = "${var.db_password}"
+  db_subnet_group_name = "${aws_db_subnet_group.bamboo_db_subnet_group.name}"
+  skip_final_snapshot  = "true"                                               # WARNING
+
+  vpc_security_group_ids = [
+    "${aws_security_group.bamboo_db_sg.id}",
   ]
 }
 
@@ -205,9 +216,9 @@ data "template_file" "ecs_user_data" {
   template = "${file("${path.module}/ecs_user_data.txt")}"
 
   vars {
-    ecs_cluster_name  = "${aws_ecs_cluster.bamboo.name}"
-    efs_id            = "${aws_efs_file_system.bamboo_home.id}"
-    efs_region        = "${var.aws_region}"
+    ecs_cluster_name = "${aws_ecs_cluster.bamboo.name}"
+    efs_id           = "${aws_efs_file_system.bamboo_home.id}"
+    efs_region       = "${var.aws_region}"
   }
 }
 
@@ -219,31 +230,32 @@ resource "aws_launch_configuration" "bamboo_ecs" {
   iam_instance_profile        = "${aws_iam_instance_profile.ecs_instance.name}"
   user_data                   = "${data.template_file.ecs_user_data.rendered}"
   associate_public_ip_address = true
-  security_groups             = [ "${aws_security_group.ecs_instance.id}" ]
+  security_groups             = ["${aws_security_group.ecs_instance.id}"]
 
   lifecycle {
     create_before_destroy = true
   }
+
   depends_on = [
     "aws_efs_mount_target.bamboo_home",
-    "aws_db_instance.bamboo_db"
+    "aws_db_instance.bamboo_db",
   ]
 }
 
 resource "aws_autoscaling_group" "bamboo_ecs" {
-  name_prefix           = "bamboo-ecs-"
-  min_size              = "${var.az_count}"
-  max_size              = 10
-  launch_configuration  = "${aws_launch_configuration.bamboo_ecs.name}"
-  health_check_type     = "EC2"
-  vpc_zone_identifier   = ["${aws_subnet.main.*.id}"]
+  name_prefix          = "bamboo-ecs-"
+  min_size             = "${var.az_count}"
+  max_size             = 10
+  launch_configuration = "${aws_launch_configuration.bamboo_ecs.name}"
+  health_check_type    = "EC2"
+  vpc_zone_identifier  = ["${aws_subnet.main.*.id}"]
 }
 
 # IAM
 
 resource "aws_iam_instance_profile" "ecs_instance" {
-  name  = "ecs-instance-profile"
-  role  = "${aws_iam_role.ecs_instance.name}"
+  name = "ecs-instance-profile"
+  role = "${aws_iam_role.ecs_instance.name}"
 }
 
 resource "aws_iam_role" "ecs_instance" {
@@ -267,10 +279,10 @@ EOF
 }
 
 resource "aws_iam_role_policy" "ecs_instance" {
-  name    = "ecs_instance_policy"
-  role    = "${aws_iam_role.ecs_instance.name}"
+  name = "ecs_instance_policy"
+  role = "${aws_iam_role.ecs_instance.name}"
 
-  policy  = <<EOF
+  policy = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -348,10 +360,11 @@ resource "aws_alb_target_group" "bamboo_ecs" {
   port     = "8085"
   protocol = "HTTP"
   vpc_id   = "${aws_vpc.main.id}"
+
   health_check {
-    path      = "/"
-    protocol  = "HTTP"
-    matcher   = "200,302" # Includes 302 as / appears to redirect
+    path     = "/"
+    protocol = "HTTP"
+    matcher  = "200,302" # Includes 302 as / appears to redirect
   }
 }
 
@@ -375,8 +388,8 @@ resource "aws_alb_listener" "bamboo_alb" {
 ## ELB for Bamboo Server Broker message queue
 
 resource "aws_elb" "bamboo_broker_elb" {
-  name                = "bamboo-broker-elb"
-  availability_zones  = ["${data.aws_availability_zones.available.names}"]
+  name               = "bamboo-broker-elb"
+  availability_zones = ["${data.aws_availability_zones.available.names}"]
 
   listener {
     instance_port     = 54663
@@ -408,6 +421,7 @@ resource "aws_ecs_cluster" "bamboo" {
 
 data "template_file" "bamboo_server_task" {
   template = "${file("${path.module}/bamboo-server-task.json")}"
+
   vars {
     bamboo_version = "${var.bamboo_version}"
   }
@@ -417,6 +431,7 @@ resource "aws_ecs_task_definition" "bamboo_server" {
   family                = "bamboo-server"
   container_definitions = "${data.template_file.bamboo_server_task.rendered}"
   network_mode          = "bridge"
+
   volume {
     name      = "efs-bamboo-home"
     host_path = "/efs/bamboo/home/bamboo"
@@ -433,7 +448,8 @@ resource "aws_ecs_service" "bamboo_server" {
     type  = "spread"
     field = "host"
   }
-  iam_role        = "${aws_iam_role.ecs_service.name}"
+
+  iam_role = "${aws_iam_role.ecs_service.name}"
 
   load_balancer {
     target_group_arn = "${aws_alb_target_group.bamboo_ecs.id}"
@@ -451,11 +467,11 @@ data "template_file" "bamboo_agent_task" {
   template = "${file("${path.module}/bamboo-agent-task.json")}"
 
   vars {
-    bamboo_server_host  = "${aws_alb.bamboo_alb.dns_name}"
-    bamboo_server_port  = "${var.bamboo_server_external_port}"
-    bamboo_version      = "${var.bamboo_version}"
-    log_group_region    = "${var.aws_region}"
-    log_group_name      = "${aws_cloudwatch_log_group.ecs.name}"
+    bamboo_server_host = "${aws_alb.bamboo_alb.dns_name}"
+    bamboo_server_port = "${var.bamboo_server_external_port}"
+    bamboo_version     = "${var.bamboo_version}"
+    log_group_region   = "${var.aws_region}"
+    log_group_name     = "${aws_cloudwatch_log_group.ecs.name}"
   }
 }
 
@@ -475,6 +491,7 @@ resource "aws_ecs_service" "bamboo_agent" {
     type  = "spread"
     field = "host"
   }
+
   # iam_role        = "${aws_iam_role.ecs_service.name}"
 
   depends_on = [
