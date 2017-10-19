@@ -90,3 +90,4 @@ If you are concerned with security, you may want to consider extending this conf
 - Add SSL to the Agent communications
 - Create a new ECS cluster for the Agents so the instance hosts don't have the EFS share mounted
 - Create 'private' subnets and deploy ECS instances to that
+- Implement the [Atlassian Security recommendations](https://confluence.atlassian.com/bamboo/security-289277194.html)
