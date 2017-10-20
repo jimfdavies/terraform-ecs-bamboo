@@ -2,8 +2,8 @@ output "alb_endpoint" {
   value = "http://${aws_alb.bamboo_alb.dns_name}/"
 }
 
-output "broker_endpoint" {
-  value = "${aws_elb.bamboo_broker_elb.dns_name}"
+output "broker_url" {
+  value = "nio://${aws_elb.bamboo_broker_elb.dns_name}:54663?wireFormat.maxInactivityDuration=300000"
 }
 
 output "database_url" {
