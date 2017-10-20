@@ -54,7 +54,7 @@ resource "aws_route_table_association" "a" {
 ### Security
 resource "aws_security_group" "ecs_instance" {
   vpc_id = "${aws_vpc.main.id}"
-  name   = "ecs-instance"
+  name   = "bamboo-ecs-instance"
 
   ingress {
     protocol  = "tcp"
@@ -72,6 +72,10 @@ resource "aws_security_group" "ecs_instance" {
     from_port = 54663
     to_port   = 54663
     self      = "true"
+
+    cidr_blocks = [
+      "${var.vpc_cidr}",
+    ]
   }
 
   ingress {
@@ -117,7 +121,7 @@ resource "aws_security_group" "alb_sg" {
 
 resource "aws_security_group" "efs_sg" {
   vpc_id = "${aws_vpc.main.id}"
-  name   = "efs"
+  name   = "bamboo-efs"
 
   ingress {
     protocol  = "tcp"
@@ -142,6 +146,7 @@ resource "aws_security_group" "efs_sg" {
 
 resource "aws_security_group" "bamboo_db_sg" {
   vpc_id = "${aws_vpc.main.id}"
+  name   = "bamboo-db"
 
   ingress {
     protocol  = "tcp"
@@ -157,6 +162,31 @@ resource "aws_security_group" "bamboo_db_sg" {
     protocol  = "-1"
     from_port = 0
     to_port   = 0
+
+    security_groups = [
+      "${aws_security_group.ecs_instance.id}",
+    ]
+  }
+}
+
+resource "aws_security_group" "bamboo_broker_elb" {
+  vpc_id = "${aws_vpc.main.id}"
+  name   = "bamboo-broker-elb"
+
+  ingress {
+    protocol  = "tcp"
+    from_port = 54663
+    to_port   = 54663
+
+    security_groups = [
+      "${aws_security_group.ecs_instance.id}",
+    ]
+  }
+
+  egress {
+    protocol  = "tcp"
+    from_port = 54663
+    to_port   = 54663
 
     security_groups = [
       "${aws_security_group.ecs_instance.id}",
@@ -388,14 +418,16 @@ resource "aws_alb_listener" "bamboo_alb" {
 ## ELB for Bamboo Server Broker message queue
 
 resource "aws_elb" "bamboo_broker_elb" {
-  name               = "bamboo-broker-elb"
-  availability_zones = ["${data.aws_availability_zones.available.names}"]
+  name            = "bamboo-broker-elb"
+  subnets         = ["${aws_subnet.main.*.id}"]
+  security_groups = ["${aws_security_group.bamboo_broker_elb.id}"]
+  internal        = "true"
 
   listener {
-    instance_port     = 54663
-    instance_protocol = "tcp"
     lb_port           = 54663
     lb_protocol       = "tcp"
+    instance_port     = 54663
+    instance_protocol = "tcp"
   }
 
   health_check {
